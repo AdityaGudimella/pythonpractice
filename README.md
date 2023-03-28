@@ -10,4 +10,5 @@
 ### Actual installation
 
 1. Clone the repository using `git clone https://github.com/AdityaGudimella/pythonpractice.git`
-2. Run `poetry install`
+2. `cd` to repo root.
+3. Run `poetry install`
