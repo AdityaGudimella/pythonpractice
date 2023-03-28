@@ -1,16 +1,15 @@
 import typing as t
 
 import numpy as np
-from dash import Dash, html, dcc
 from plotly import graph_objects as go
 
 
 def scatter_plot_with_regression_line(
     x: np.ndarray,
     y: np.ndarray,
-    title: str = None,
-    x_label: str = None,
-    y_label: str = None,
+    title: str | None = None,
+    x_label: str | None = None,
+    y_label: str | None = None,
 ) -> None:
     """
     Scatter plot with regression line.

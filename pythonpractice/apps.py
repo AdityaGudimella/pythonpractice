@@ -1,7 +1,5 @@
 import typing as t
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 from dash import html, dcc
 from dash.dependencies import Input, Output
@@ -148,149 +146,150 @@ def visualize_parameter_changes_app(
     return app
 
 
-def visualize_lr_affect_gd_app(
-    loss_fn: JaxLossFn,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    lr: ParameterRange,
-) -> Dash:
-    """Returns a Dash app for visualizing the effect of the learning rate.
+# TODO: Replace jax with pytorch
+# def visualize_lr_affect_gd_app(
+#     loss_fn: JaxLossFn,
+#     x: None,
+#     y: jnp.ndarray,
+#     lr: ParameterRange,
+# ) -> Dash:
+#     """Returns a Dash app for visualizing the effect of the learning rate.
 
-    The app does the following things:
-    1. Display a plot of the loss as a function of the learning rate.
-    2. Display a slider for the learning rate.
-    """
-    grad_fn = jax.grad(loss_fn)
+#     The app does the following things:
+#     1. Display a plot of the loss as a function of the learning rate.
+#     2. Display a slider for the learning rate.
+#     """
+#     grad_fn = jax.grad(loss_fn)
 
-    def train_step(
-        weight: float,
-        lr: float,
-    ) -> tuple[float, float]:
-        """Performs a single training step.
+#     def train_step(
+#         weight: float,
+#         lr: float,
+#     ) -> tuple[float, float]:
+#         """Performs a single training step.
 
-        Args:
-            weight: Slope of the line.
-            lr: Learning rate.
+#         Args:
+#             weight: Slope of the line.
+#             lr: Learning rate.
 
-        Returns:
-            Loss.
-        """
-        grad = grad_fn((weight,), x, y)
-        return loss_fn((weight,), x, y), weight - lr * grad
+#         Returns:
+#             Loss.
+#         """
+#         grad = grad_fn((weight,), x, y)
+#         return loss_fn((weight,), x, y), weight - lr * grad
 
-    def train_losses(init_weight: float, lr: float) -> tuple[list[float], list[float]]:
-        """Performs the training until the loss plateaus and returns the losses.
+#     def train_losses(init_weight: float, lr: float) -> tuple[list[float], list[float]]:
+#         """Performs the training until the loss plateaus and returns the losses.
 
-        Args:
-            init_weight: Initial slope of the line.
-            lr: float
+#         Args:
+#             init_weight: Initial slope of the line.
+#             lr: float
 
-        Returns:
-            Weight for each epoch.
-            Loss for each epoch.
-        """
-        losses = []
-        weights = [init_weight]
-        weight = init_weight
-        for _ in range(1000):
-            loss, weight = train_step(weight, lr)
-            losses.append(loss)
-            weights.append(weight)
-            if len(losses) > 100 and np.abs(losses[-1] - losses[-2]) < 1e-3:
-                break
-        return weights, losses
+#         Returns:
+#             Weight for each epoch.
+#             Loss for each epoch.
+#         """
+#         losses = []
+#         weights = [init_weight]
+#         weight = init_weight
+#         for _ in range(1000):
+#             loss, weight = train_step(weight, lr)
+#             losses.append(loss)
+#             weights.append(weight)
+#             if len(losses) > 100 and np.abs(losses[-1] - losses[-2]) < 1e-3:
+#                 break
+#         return weights, losses
 
-    def predict(weight: float, x: jnp.ndarray) -> jnp.ndarray:
-        """Predicts the y values for the given x values."""
-        return weight * x
+#     def predict(weight: float, x: jnp.ndarray) -> jnp.ndarray:
+#         """Predicts the y values for the given x values."""
+#         return weight * x
 
-    def plot_training(lr: float) -> go.Figure:
-        """Plots a curve showing the loss_fn and the losses at each epoch."""
-        init_params = jnp.random.normal(jax.random.PRNGKey(0), ())
-        weights, losses = train_losses(init_params, lr)
-        loss_x = jnp.linspace(-1000, 1000, 1000)
-        loss_y = np.array(
-            [
-                loss_fn((weight,), y_pred=predict(weight, x), y_true=y)
-                for weight in loss_x
-            ]
-        )
+#     def plot_training(lr: float) -> go.Figure:
+#         """Plots a curve showing the loss_fn and the losses at each epoch."""
+#         init_params = jnp.random.normal(jax.random.PRNGKey(0), ())
+#         weights, losses = train_losses(init_params, lr)
+#         loss_x = jnp.linspace(-1000, 1000, 1000)
+#         loss_y = np.array(
+#             [
+#                 loss_fn((weight,), y_pred=predict(weight, x), y_true=y)
+#                 for weight in loss_x
+#             ]
+#         )
 
-        fig = go.Figure(
-            data=[
-                go.Scatter(
-                    x=loss_x,
-                    y=loss_y,
-                    mode="lines",
-                    name="Loss",
-                ),
-                go.Scatter(
-                    x=np.array(weights),
-                    y=np.array(losses),
-                    mode="lines",
-                    name="Training Loss",
-                ),
-            ],
-            layout=go.Layout(
-                title="Loss",
-                xaxis_title="Learning Rate",
-                yaxis_title="Loss",
-            ),
-        )
-        return fig
+#         fig = go.Figure(
+#             data=[
+#                 go.Scatter(
+#                     x=loss_x,
+#                     y=loss_y,
+#                     mode="lines",
+#                     name="Loss",
+#                 ),
+#                 go.Scatter(
+#                     x=np.array(weights),
+#                     y=np.array(losses),
+#                     mode="lines",
+#                     name="Training Loss",
+#                 ),
+#             ],
+#             layout=go.Layout(
+#                 title="Loss",
+#                 xaxis_title="Learning Rate",
+#                 yaxis_title="Loss",
+#             ),
+#         )
+#         return fig
 
-    app = Dash(__name__)
-    plot = html.Div(
-        [
-            dcc.Graph(
-                id="loss-plot",
-                figure=plot_training(lr.avg),
-            ),
-            html.H2(id="lr"),
-        ],
-        style={"width": "100%", "display": "block"},
-    )
-    text_input = html.Div(
-        [
-            html.Label("Learning rate"),
-            html.Div(
-                [
-                    html.H2("Learning rate"),
-                    dcc.Input(
-                        id="Learning rate",
-                        type="text",
-                        value=lr.avg,
-                    ),
-                ],
-                style={"width": "100%", "display": "block"},
-            ),
-        ],
-        style={"width": "100%", "display": "block"},
-    )
-    app.layout = html.Div(
-        [
-            plot,
-            html.Div(
-                children=[text_input],
-                stype={
-                    "display": "flex",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "height": "100vh",
-                },
-            ),
-        ]
-    )
+#     app = Dash(__name__)
+#     plot = html.Div(
+#         [
+#             dcc.Graph(
+#                 id="loss-plot",
+#                 figure=plot_training(lr.avg),
+#             ),
+#             html.H2(id="lr"),
+#         ],
+#         style={"width": "100%", "display": "block"},
+#     )
+#     text_input = html.Div(
+#         [
+#             html.Label("Learning rate"),
+#             html.Div(
+#                 [
+#                     html.H2("Learning rate"),
+#                     dcc.Input(
+#                         id="Learning rate",
+#                         type="text",
+#                         value=lr.avg,
+#                     ),
+#                 ],
+#                 style={"width": "100%", "display": "block"},
+#             ),
+#         ],
+#         style={"width": "100%", "display": "block"},
+#     )
+#     app.layout = html.Div(
+#         [
+#             plot,
+#             html.Div(
+#                 children=[text_input],
+#                 stype={
+#                     "display": "flex",
+#                     "justifyContent": "center",
+#                     "alignItems": "center",
+#                     "height": "100vh",
+#                 },
+#             ),
+#         ]
+#     )
 
-    @app.callback(
-        [
-            Output("loss-plot", "figure"),
-            Output("lr", "children"),
-        ],
-        [Input("Learning rate", "value")],
-    )
-    def update_plot(lr: float):
-        fig = plot_training(lr)
-        return fig, f"Learning rate: {lr:.2f}"
+#     @app.callback(
+#         [
+#             Output("loss-plot", "figure"),
+#             Output("lr", "children"),
+#         ],
+#         [Input("Learning rate", "value")],
+#     )
+#     def update_plot(lr: float):
+#         fig = plot_training(lr)
+#         return fig, f"Learning rate: {lr:.2f}"
 
-    return app
+#     return app
