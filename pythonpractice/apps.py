@@ -33,16 +33,17 @@ class ParameterRange(t.NamedTuple):
         return 0.5 * (self.minimum + self.maximum)
 
 
-class JaxLossFn(t.Protocol):
-    """Similar to `LossFn`, but for JAX."""
+# TODO: Replace with torch version
+# class JaxLossFn(t.Protocol):
+#     """Similar to `LossFn`, but for JAX."""
 
-    def __call__(
-        self,
-        params: tuple[jnp.ndarray | float, ...],
-        y_pred: jnp.ndarray,
-        y_true: jnp.ndarray,
-    ) -> float:
-        ...
+#     def __call__(
+#         self,
+#         params: tuple[jnp.ndarray | float, ...],
+#         y_pred: jnp.ndarray,
+#         y_true: jnp.ndarray,
+#     ) -> float:
+#         ...
 
 
 def visualize_parameter_changes_app(
